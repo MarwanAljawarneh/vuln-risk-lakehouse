@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# macOS
+.DS_Store
+
+# Environment variables and credentials
+.env
+.env.*
+
+# Downloaded datasets
+data/raw/
