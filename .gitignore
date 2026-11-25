@@ -13,4 +13,7 @@ __pycache__/
 .env.*
 
 # Downloaded datasets
-data/raw/
+data/landing/
+
+# Logs
+logs/
