@@ -57,8 +57,6 @@ The initial NVD ingestion reads paginated JSON API responses from a Unity Catalo
 
 Each source file is preserved as a raw JSON payload with ingestion metadata (`source_file`, `ingested_at`). Recursive file lookup supports nested landing directories.
 
-**Implementation:** [load_nvd.py](load_nvd.py)
-
 ### Validation
 
 ```sql
@@ -73,3 +71,46 @@ FROM vuln_lakehouse.bronze.nvd_raw;
 **Result:** 4 JSON response pages containing 7,943 CVE entries from the seven-day modified-CVE extraction window.
 
 ![NVD Bronze Validation](../../docs/screenshots/nvd_bronze_validation.png)
+
+## Exploit Prediction Scoring System (EPSS)
+
+| Property | Value |
+|---|---|
+| Source | FIRST Exploit Prediction Scoring System (EPSS) |
+| Landing Location | `/Volumes/vuln_lakehouse/bronze/landing/epss/` |
+| Target Table | `vuln_lakehouse.bronze.epss_raw` |
+| Source Format | Gzip-compressed CSV |
+| Storage Format | Delta Lake |
+| Ingestion Engine | PySpark |
+
+### Implementation
+
+The initial EPSS ingestion reads gzip-compressed CSV snapshots from a Unity Catalog Volume using Spark's CSV data source.
+
+Unlike KEV and NVD, EPSS is loaded as individual CVE records because the source is already tabular. Source values are preserved as strings, with file-path and ingestion-timestamp metadata added for traceability. The original compressed file remains in the landing Volume.
+
+### Table Schema
+
+| Column | Type | Description |
+|---|---|---|
+| `cve` | STRING | CVE identifier |
+| `epss` | STRING | Raw exploitation probability |
+| `percentile` | STRING | Raw EPSS percentile |
+| `source_file` | STRING | Original compressed CSV file path |
+| `ingested_at` | TIMESTAMP | Timestamp of the Databricks ingestion |
+
+### Validation
+
+The initial load was validated using Databricks SQL:
+
+```sql
+SELECT
+    COUNT(*) AS total_records,
+    COUNT(DISTINCT cve) AS unique_cves,
+    COUNT(*) - COUNT(DISTINCT cve) AS duplicate_cves
+FROM vuln_lakehouse.bronze.epss_raw;
+```
+
+**Result:** 412,861 total records, 412,861 unique CVEs, and 0 duplicate CVE identifiers.
+
+![EPSS Bronze Validation](../../docs/screenshots/epss_bronze_validation.png)
